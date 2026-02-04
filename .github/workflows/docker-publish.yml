@@ -25,7 +25,7 @@ jobs:
           DOCKER_REPO: xkmxz2503/napcat-mcsm-base
           # 👉 自定义Tag（唯一需要修改的地方，填你要的名称）
           CUSTOM_TAG: base
-        run: 
+        run: |
           docker buildx build \
             --output "type=image,push=true" \
             --platform linux/amd64,linux/arm64 \
@@ -36,4 +36,4 @@ jobs:
 
       - name: 退出 Docker Hub
         if: always()
-        run: docker logout
+        run: docker logout    
