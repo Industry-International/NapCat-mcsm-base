@@ -4,42 +4,36 @@ on:
   workflow_dispatch:  # 手动触发
 
 jobs:
-  publish-dockerhub:
+  publish-dockerio:
     runs-on: ubuntu-latest
     steps:
       - name: 拉取代码
-        uses: actions/checkout@v4  # 仅拉取本地代码（含Dockerfile）
+        uses: actions/checkout@v4
 
-      - name: 设置Docker Buildx
+      - name: 设置 Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: 登录Docker Hub
+      - name: 登录 Docker Hub（Docker.io）
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: 生成动态Tag + 构建并推送镜像
+      - name: 构建并推送 Docker.io 镜像
         env:
-          DOCKER_REPO: xkmxz2503/napcat-mcsm-base  # 你的Docker Hub仓库
-          # 动态Tag规则：取本地Git最新标签（无标签则用提交短哈希）
-          DYNAMIC_TAG: ${{ github.sha }}  # 备选：用git命令取标签：git describe --abbrev=0 --tags
-        run: |
-          # 优先使用Git最新标签，无标签则 fallback 到提交哈希
-          if git describe --abbrev=0 --tags >/dev/null 2>&1; then
-            DYNAMIC_TAG=$(git describe --abbrev=0 --tags)
-          else
-            DYNAMIC_TAG=${{ github.sha }}
-          fi
-          # 同时推送 动态版本Tag + latest 两个标签
+          # 你的 Docker.io 仓库（无需改，默认就是 Docker 官方镜像源）
+          DOCKER_REPO: xkmxz2503/napcat-mcsm-base
+          # 👉 自定义Tag（唯一需要修改的地方，填你要的名称）
+          CUSTOM_TAG: base
+        run: 
           docker buildx build \
             --output "type=image,push=true" \
             --platform linux/amd64,linux/arm64 \
-            --tag ${DOCKER_REPO}:${DYNAMIC_TAG} \
+            --tag ${DOCKER_REPO}:${CUSTOM_TAG} \
             --tag ${DOCKER_REPO}:latest \
             --file ./Dockerfile \
             .
 
-      - name: 退出Docker Hub
+      - name: 退出 Docker Hub
         if: always()
         run: docker logout
