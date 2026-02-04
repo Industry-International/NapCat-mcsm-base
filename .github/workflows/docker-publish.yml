@@ -1,109 +1,45 @@
-name: Docker Build & Push & Sign
+name: docker-publish
 
 on:
-  push:
-    branches: [ "main" ]
-    tags: [ 'v*.*.*' ]
-  pull_request:
-    branches: [ "main" ]
-
-env:
-  # 可根据需求切换：docker.io / ghcr.io
-  REGISTRY: docker.io
-  IMAGE_NAME: ${{ github.repository }}
+  workflow_dispatch:  # 手动触发
 
 jobs:
-  build:
+  publish-dockerhub:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-      id-token: write  # cosign 签名必需
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: 拉取代码
+        uses: actions/checkout@v4  # 仅拉取本地代码（含Dockerfile）
 
-      # 1. 安装 cosign（仅非 PR 时）
-      - name: Install cosign
-        if: github.event_name != 'pull_request'
-        uses: sigstore/cosign-installer@59acb6260d9c0ba8f4a2f9d9b48431a222b68e20 # v3.5.0
-        with:
-          cosign-release: 'v2.2.4'
-
-      # 2. 登录 Docker 仓库（关键：区分 Docker Hub/ghcr.io）
-      - name: Log into registry
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
-        with:
-          registry: ${{ env.REGISTRY }}
-          # 👉 配置说明：
-          # 推 Docker Hub：用 DOCKER_HUB_USERNAME + DOCKER_HUB_TOKEN（仓库密钥）
-          # 推 ghcr.io：用 GITHUB_TOKEN 即可
-          username: ${{ secrets.DOCKER_HUB_USERNAME || github.actor }}
-          password: ${{ secrets.DOCKER_HUB_TOKEN || secrets.GITHUB_TOKEN }}
-
-      # 3. 缓存 Docker 层（加速构建）
-      - name: Set up Docker Buildx
+      - name: 设置Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Cache Docker layers
-        uses: actions/cache@v3
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
 
-      # 4. 核心：构建并推送镜像（修复缺失的步骤）
-      - name: Build and push Docker image
-        id: build-and-push
-        uses: docker/build-push-action@v5
+      - name: 登录Docker Hub
+        uses: docker/login-action@v3
         with:
-          context: .
-          push: ${{ github.event_name != 'pull_request' }}  # PR 仅构建不推送
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
-          # 可选：指定 Dockerfile 路径，如：dockerfile: ./Dockerfile
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # 5. 签名镜像（仅非 PR 时）
-      - name: Sign the published Docker image
-        if: ${{ github.event_name != 'pull_request' }}
+      - name: 生成动态Tag + 构建并推送镜像
         env:
-          TAGS: ${{ steps.meta.outputs.tags }}
-          DIGEST: ${{ steps.build-and-push.outputs.digest }}
+          DOCKER_REPO: mlikiowa/napcat-docker  # 你的Docker Hub仓库
+          # 动态Tag规则：取本地Git最新标签（无标签则用提交短哈希）
+          DYNAMIC_TAG: ${{ github.sha }}  # 备选：用git命令取标签：git describe --abbrev=0 --tags
         run: |
-          echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
+          # 优先使用Git最新标签，无标签则 fallback 到提交哈希
+          if git describe --abbrev=0 --tags >/dev/null 2>&1; then
+            DYNAMIC_TAG=$(git describe --abbrev=0 --tags)
+          else
+            DYNAMIC_TAG=${{ github.sha }}
+          fi
+          # 同时推送 动态版本Tag + latest 两个标签
+          docker buildx build \
+            --output "type=image,push=true" \
+            --platform linux/amd64,linux/arm64 \
+            --tag ${DOCKER_REPO}:${DYNAMIC_TAG} \
+            --tag ${DOCKER_REPO}:latest \
+            --file ./Dockerfile \
+            .
 
-      # 6. 可选：推送签名证明到 Rekor（公开仓库建议开启）
-      - name: Verify cosign signature
-        if: ${{ github.event_name != 'pull_request' }}
-        run: |
-          echo "${{ steps.build-and-push.outputs.digest }}" | xargs -I {} cosign verify --certificate-identity=${{ github.actor }}@users.noreply.github.com --certificate-oidc-issuer=https://token.actions.githubusercontent.com {}@${DIGEST}
-
-      # 7. 缓存更新（保留最新层）
-      - name: Move cache
-        run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
-
-  # 可选：标签生成步骤（拆分出来更清晰）
-  meta:
-    runs-on: ubuntu-latest
-    outputs:
-      tags: ${{ steps.meta.outputs.tags }}
-      labels: ${{ steps.meta.outputs.labels }}
-    steps:
-      - name: Extract Docker metadata
-        id: meta
-        uses: docker/metadata-action@96383f45573cb7f253c731d3b3ab81c87ef81934 # v5.0.0
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          # 补充：主分支推送时添加 latest 标签
-          flavor: |
-            latest=auto
-          tags: |
-            type=ref,event=branch
-            type=ref,event=tag
-            type=sha,format=short
+      - name: 退出Docker Hub
+        if: always()
+        run: docker logout
