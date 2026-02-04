@@ -21,7 +21,7 @@ jobs:
 
       - name: 生成动态Tag + 构建并推送镜像
         env:
-          DOCKER_REPO: mlikiowa/napcat-docker  # 你的Docker Hub仓库
+          DOCKER_REPO: xkmxz2503/napcat-mcsm-base  # 你的Docker Hub仓库
           # 动态Tag规则：取本地Git最新标签（无标签则用提交短哈希）
           DYNAMIC_TAG: ${{ github.sha }}  # 备选：用git命令取标签：git describe --abbrev=0 --tags
         run: |
