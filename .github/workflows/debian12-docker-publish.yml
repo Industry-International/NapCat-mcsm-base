@@ -1,4 +1,4 @@
-name: debian12-docker-publish
+name: all-docker-publish
 
 on:
   workflow_dispatch:  # 手动触发
@@ -24,13 +24,13 @@ jobs:
           # 你的 Docker.io 仓库（无需改，默认就是 Docker 官方镜像源）
           DOCKER_REPO: xkmxz2503/napcat-mcsm-base
           # 👉 自定义Tag（唯一需要修改的地方，填你要的名称）
-          CUSTOM_TAG: debian12
+          CUSTOM_TAG: base-0.1
         run: |
           docker buildx build \
             --output "type=image,push=true" \
             --platform linux/amd64,linux/arm64 \
             --tag ${DOCKER_REPO}:${CUSTOM_TAG} \
-            --file ./debian12/Dockerfile \
+            --file ./all/Dockerfile \
             .
 
       - name: 退出 Docker Hub
