@@ -31,7 +31,7 @@ jobs:
             --platform linux/amd64,linux/arm64 \
             --tag ${DOCKER_REPO}:${CUSTOM_TAG} \
             --tag ${DOCKER_REPO}:latest \
-            --file ./all/Dockerfile \
+            --file ./Linux/Dockerfile \
             .
 
       - name: 退出 Docker Hub
