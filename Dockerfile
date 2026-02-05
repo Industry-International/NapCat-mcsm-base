@@ -1,4 +1,4 @@
-FROM mlikiowa/napcat-docker:base
+FROM xkmxz2503/napcat-mcsm-linux:1
 
 RUN useradd --no-log-init -d /app napcat
 
