@@ -24,7 +24,7 @@ jobs:
           # 你的 Docker.io 仓库（无需改，默认就是 Docker 官方镜像源）
           DOCKER_REPO: xkmxz2503/napcat-mcsm-base
           # 👉 自定义Tag（唯一需要修改的地方，填你要的名称）
-          CUSTOM_TAG: base
+          CUSTOM_TAG: base-shell
         run: |
           docker buildx build \
             --output "type=image,push=true" \
