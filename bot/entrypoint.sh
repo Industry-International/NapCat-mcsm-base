@@ -1,19 +1,20 @@
 #!/bin/bash
 
 trap "" SIGPIPE
-# 安装 napcat
-if [ ! -f "napcat/napcat.mjs" ]; then
-    unzip -q NapCat.Shell.zip -d ./NapCat.Shell
-    cp -rf NapCat.Shell/* napcat/
-    rm -rf ./NapCat.Shell
+
+# 安装 napcat（所有路径改为绝对路径）
+if [ ! -f "/app/napcat/napcat.mjs" ]; then
+    unzip -q /app/NapCat.Shell.zip -d /app/NapCat.Shell
+    cp -rf /app/NapCat.Shell/* /app/napcat/
+    rm -rf /app/NapCat.Shell
 fi
-if [ ! -f "napcat/config/napcat.json" ]; then
-    unzip -q NapCat.Shell.zip -d ./NapCat.Shell
-    cp -rf NapCat.Shell/config/* napcat/config/
-    rm -rf ./NapCat.Shell
+if [ ! -f "/app/napcat/config/napcat.json" ]; then
+    unzip -q /app/NapCat.Shell.zip -d /app/NapCat.Shell
+    cp -rf /app/NapCat.Shell/config/* /app/napcat/config/
+    rm -rf /app/NapCat.Shell
 fi
 
-# 配置 WebUI Token
+# 配置 WebUI Token（原路径已是绝对，保留）
 CONFIG_PATH=/app/napcat/config/webui.json
 
 if [ ! -f "${CONFIG_PATH}" ] && [ -n "${WEBUI_TOKEN}" ]; then
@@ -29,7 +30,7 @@ if [ ! -f "${CONFIG_PATH}" ] && [ -n "${WEBUI_TOKEN}" ]; then
 EOF
 fi
 
-# 删除字符串两端的引号
+# 删除字符串两端的引号（无路径，无需修改）
 remove_quotes() {
     local str="$1"
     local first_char="${str:0:1}"
@@ -47,12 +48,15 @@ remove_quotes() {
     echo "$str"
 }
 
+# 复制模式配置文件（原路径已是绝对，保留）
 if [ -n "${MODE}" ]; then
     cp /app/templates/$MODE.json /app/napcat/config/onebot11.json
 fi
 
+# 删除X1锁文件（原路径已是绝对，保留）
 rm -rf "/tmp/.X1-lock"
 
+# 设置用户/组ID并修改权限（原路径已是绝对，保留）
 : ${NAPCAT_GID:=0}
 : ${NAPCAT_UID:=0}
 usermod -o -u ${NAPCAT_UID} napcat
@@ -60,9 +64,11 @@ groupmod -o -g ${NAPCAT_GID} napcat
 usermod -g ${NAPCAT_GID} napcat
 chown -R ${NAPCAT_UID}:${NAPCAT_GID} /app
 
+# 启动Xvfb虚拟显示（无相对路径，无需修改）
 gosu napcat Xvfb :1 -screen 0 1080x760x16 +extension GLX +render > /dev/null 2>&1 &
 sleep 2
 
+# 设置环境变量并启动QQ（cd改为绝对路径，执行命令路径均为绝对）
 export FFMPEG_PATH=/usr/bin/ffmpeg
 export DISPLAY=:1
 cd /app/napcat
