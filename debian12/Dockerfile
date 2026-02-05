@@ -46,6 +46,8 @@ RUN set -eux; \
         jq \
         gosu \
         tzdata \
+        grep \
+        sed \
     ; \
     # 时区配置（tzdata已通过ARG设置TZ，无需额外ln/echo）
     dpkg-reconfigure --frontend noninteractive tzdata; \
