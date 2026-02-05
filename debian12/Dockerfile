@@ -18,36 +18,28 @@ ENV TZ=${TZ} \
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
-        # 浏览器/桌面应用依赖
-        libnss3 \
-        libnotify4 \
-        libsecret-1-0 \
-        libgbm1 \
-        xvfb \
-        libasound2 \
-        libgtk-3-0 \
-        libxss1 \
-        libxtst6 \
-        libatspi2.0-0 \
-        libx11-xcb1 \
-        # 中文字体支持
-        fonts-wqy-zenhei \
-        # 网络/加密相关
-        gnutls-bin \
-        # 系统基础依赖
-        libglib2.0-dev \
-        libdbus-1-3 \
-        # 多媒体处理
-        ffmpeg \
-        # 工具类
-        unzip \
-        dbus-user-session \
-        curl \
-        jq \
-        gosu \
-        tzdata \
-        grep \
-        sed \
+    libnss3 \
+    libnotify4 \
+    libsecret-1-0 \
+    libgbm1 \
+    xvfb \
+    libasound2 \
+    fonts-wqy-zenhei \
+    gnutls-bin \
+    libglib2.0-dev \
+    libdbus-1-3 \
+    libgtk-3-0 \
+    libxss1 \
+    libxtst6 \
+    libatspi2.0-0 \
+    libx11-xcb1 \
+    ffmpeg \
+    unzip \
+    dbus-user-session \
+    curl \
+    jq \
+    gosu \
+    tzdata && \
     ; \
     # 时区配置（tzdata已通过ARG设置TZ，无需额外ln/echo）
     dpkg-reconfigure --frontend noninteractive tzdata; \
