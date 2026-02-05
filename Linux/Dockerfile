@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM ubuntu:22.04-slim
 
 # 设置环境变量
 ENV DEBIAN_FRONTEND=noninteractive \
