@@ -27,8 +27,10 @@ RUN apt-get update && apt-get install -y \
     curl \
     jq \
     gosu \
-    tzdata && \
-    echo "${TZ}" > /etc/timezone && \ 
+    tzdata \
+    xdg-utils \
+    desktop-file-utils && \
+    echo "${TZ}" > /etc/timezone && \
     ln -sf /usr/share/zoneinfo/${TZ} /etc/localtime && \
     apt autoremove -y && \
     apt clean && \
